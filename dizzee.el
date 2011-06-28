@@ -52,6 +52,34 @@
   "Wrap the results of `expr', evaluating to t or nil when creating predicate-p functions"
   (if expr t nil))
 
+(defun dz-symb-concat (symb suffix)
+  "Return the symbol created by concatenating `symb' with `suffix'"
+  (intern (concat (symbol-name symb) (symbol-name suffix))))
+
+(defun dz-split (lst)
+    "Split list into a list of lists"
+    (if (eql 1 (length lst))
+        (list lst)
+      (let ((container (list)))
+        (add-to-list 'container (list (first lst)))
+        (append container (dz-split (rest lst))))))
+
+(defun dz-akeys (alist)
+  "Return a list of the keys in `alist'"
+  (mapcar #'car alist))
+
+(defun dz-regexp-filter (list regexp)
+      "Filter LIST of strings with `regexp'."
+      (let (new)
+        (dolist (string list)
+          (when (string-match regexp string)
+           (setq new (cons string new))))
+        (nreverse new)))
+
+(defun dz-alist-filter (alist regexp)
+  "Return values from `alist' whose KEY matches `regexp'"
+  (mapcan #'(lambda (k) (aget alist k)) (dz-regexp-filter (dz-akeys alist) regexp)))
+
 ;;
 ;; Emacs utilities
 ;;
@@ -93,13 +121,31 @@
   (let ((proc (get-buffer-process (concat "*" name "*"))))
     (if proc (kill-process proc))))
 
+;;
+;; Services
+;;
+;; Commentary:
+;;
+;; Functions related to defining and manipulating services
+;;
+
+(defun dz-map-call (services call &optional splice)
+    "Map calls to `call' onto each of the SEQUENCE `services'
+If optional `splice' is non-nil, we return a list of single-item lists,
+each one containing a service call, suitable for splicing into a macro."
+    (let ((calls (list)))
+      (dolist (serv services)
+        (add-to-list 'calls (dz-symb-concat serv call)))
+      (if (not splice)
+          calls
+        )))
 
 (defmacro dz-defservice (name command args &optional port)
   "Expand to be an interactive dz service e.g. sse/backend/whitelabel
 Args are expected to be: `name` `command` `args` `dont-pop`
 where name and command are strings, args a list, and dont-pop optional.
 "
-  (let* ((namestr (symbol-name name))
+  (let* ((namestr (symbol-name namwe))
          (start (concat namestr "-start"))
          (stop (concat namestr "-stop")))
     (if port
@@ -141,21 +187,37 @@ where name and command are strings, args a list, and dont-pop optional.
          (interactive)
          (message ,(concat "Starting " namestr "..."))
          ; TODO Make service calls here
+         ,(dz-map-call services '-start t)
          )
          )))
 
 (dz-defservice-group warehouse '(onzo-data-thrift onzo-data-frontend))
 
+;;
+;; Reloads
+;;
+;; Commentary:
+;;
+;; Sometimes wr want to restart services when we save files in
+;; a particular path. Let's do that.
+;;
+
+(defvar dz-reload-services '()
+  "Alist of services that we want to reload")
+
 (defun dz-reload ()
   "Executed as a file-save-hook, this function restarts any services that
 have been regisered as reloading.")
 
-(defun dz-register-reload (service, path)
+(defun dz-register-reload (service path)
   "Register `service' as a project you would like to reload when saving any
-files under `path'
+files under `path'"
+  (aput 'dz-reload-services path service))
 
-Example usage:
-(dx-register-reload 'cool-app "~/src/app")
-")
+; (dz-register-reload 'data-thrift "~/thrifty")
+; (dz-register-reload 'data-thrift2 "~/src2/onzo/hah")#
+
+(add-hook 'after-save-hook (lambda () (dz-reload)))
+
 (provide 'dizzee)
 ;; Code ends
