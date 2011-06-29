@@ -48,14 +48,17 @@
 ;; syntax sugar for common idioms.
 ;;
 
+;;;###autoload
 (defun dz-xp (expr)
   "Wrap the results of `expr', evaluating to t or nil when creating predicate-p functions"
   (if expr t nil))
 
+;;;###autoload
 (defun dz-symb-concat (symb suffix)
   "Return the symbol created by concatenating `symb' with `suffix'"
   (intern (concat (symbol-name symb) (symbol-name suffix))))
 
+;;;###autoload
 (defun dz-split (lst)
     "Split list into a list of lists"
     (if (eql 1 (length lst))
@@ -64,10 +67,12 @@
         (add-to-list 'container (list (first lst)))
         (append container (dz-split (rest lst))))))
 
+;;;###autoload
 (defun dz-akeys (alist)
   "Return a list of the keys in `alist'"
   (mapcar #'car alist))
 
+;;;###autoload
 (defun dz-regexp-filter (list regexp)
       "Filter LIST of strings with `regexp'."
       (let (new)
@@ -76,6 +81,7 @@
            (setq new (cons string new))))
         (nreverse new)))
 
+;;;###autoload
 (defun dz-alist-filter (alist regexp)
   "Return values from `alist' whose KEY matches `regexp'"
   (mapcan #'(lambda (k) (aget alist k)) (dz-regexp-filter (dz-akeys alist) regexp)))
@@ -207,7 +213,8 @@ where name and command are strings, args a list, and dont-pop optional.
 
 (defun dz-reload ()
   "Executed as a file-save-hook, this function restarts any services that
-have been regisered as reloading.")
+have been regisered as reloading."
+  (buffer-file-name))
 
 (defun dz-register-reload (service path)
   "Register `service' as a project you would like to reload when saving any
