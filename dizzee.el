@@ -135,23 +135,15 @@
 ;; Functions related to defining and manipulating services
 ;;
 
-(defun dz-map-call (services call &optional splice)
-    "Map calls to `call' onto each of the SEQUENCE `services'
-If optional `splice' is non-nil, we return a list of single-item lists,
-each one containing a service call, suitable for splicing into a macro."
-    (let ((calls (list)))
-      (dolist (serv services)
-        (add-to-list 'calls (dz-symb-concat serv call)))
-      (if (not splice)
-          calls
-        )))
+
+(dz-defservice-group warehouse '(onzo-data-thrift onzo-data-frontend))
 
 (defmacro dz-defservice (name command args &optional port)
   "Expand to be an interactive dz service e.g. sse/backend/whitelabel
 Args are expected to be: `name` `command` `args` `dont-pop`
 where name and command are strings, args a list, and dont-pop optional.
 "
-  (let* ((namestr (symbol-name namwe))
+  (let* ((namestr (symbol-name name))
          (start (concat namestr "-start"))
          (stop (concat namestr "-stop")))
     (if port
@@ -181,8 +173,18 @@ where name and command are strings, args a list, and dont-pop optional.
          (dz-xp (get-buffer-process ,(concat "*" namestr "*")))))))
 
 ;;
-(dz-defservice backend (concat (dz-backend-scripts) "/backend_server") nil 8080)
+;; (dz-defservice backend (concat (dz-backend-scripts) "/backend_server") nil 8080)
 
+;; (defmacro dz-map-call (services call)
+;;     "Map calls to `call' onto each of the SEQUENCE `services'"
+;;     (let ((calls (mapcar (lambda (s) (concat (symbol-name s) (symbol-name call))) services)))
+;;       `,calls))
+
+    ;; (let ((calls (list)))
+    ;;   (dolist (serv services)
+    ;;     (push serv (list calls)))
+    ;;       calls
+    ;;     ))
 
 (defmacro dz-defservice-group (name services)
   "Create a group of services that function as a project together"
@@ -193,11 +195,10 @@ where name and command are strings, args a list, and dont-pop optional.
          (interactive)
          (message ,(concat "Starting " namestr "..."))
          ; TODO Make service calls here
-         ,(dz-map-call services '-start t)
-         )
-         )))
+         ))))
 
-(dz-defservice-group warehouse '(onzo-data-thrift onzo-data-frontend))
+(dz-defservice-group warehouse (onzo-data-thrift onzo-data-frontend))
+
 
 ;;
 ;; Reloads
