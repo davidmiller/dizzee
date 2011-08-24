@@ -135,13 +135,19 @@
 ;; Functions related to defining and manipulating services
 ;;
 
-
-(dz-defservice-group warehouse '(onzo-data-thrift onzo-data-frontend))
-
 (defmacro dz-defservice (name command args &optional port)
   "Expand to be an interactive dz service e.g. sse/backend/whitelabel
 Args are expected to be: `name` `command` `args` `dont-pop`
 where name and command are strings, args a list, and dont-pop optional.
+
+This macro will provide the following functions:
+
+name-start
+name-stop
+name-restart
+name-running-p
+
+\(dz-defservice backend \"~/scripts/backend_server\") nil 8080)
 "
   (let* ((namestr (symbol-name name))
          (start (concat namestr "-start"))
@@ -172,33 +178,36 @@ where name and command are strings, args a list, and dont-pop optional.
          "Determine whether we're running or not"
          (dz-xp (get-buffer-process ,(concat "*" namestr "*")))))))
 
-;;
-;; (dz-defservice backend (concat (dz-backend-scripts) "/backend_server") nil 8080)
-
-;; (defmacro dz-map-call (services call)
-;;     "Map calls to `call' onto each of the SEQUENCE `services'"
-;;     (let ((calls (mapcar (lambda (s) (concat (symbol-name s) (symbol-name call))) services)))
-;;       `,calls))
-
-    ;; (let ((calls (list)))
-    ;;   (dolist (serv services)
-    ;;     (push serv (list calls)))
-    ;;       calls
-    ;;     ))
-
 (defmacro dz-defservice-group (name services)
-  "Create a group of services that function as a project together"
+  "Create a group of services that function as a project together.
+This allows us to start groups of complimentary services together.
+
+Example:
+
+\(dz-defservice-group warehouse (ornithology-thrift ornithology-frontend))
+"
   (let ((namestr (symbol-name name)))
     `(progn
        (defun ,(intern (concat namestr "-start")) ()
          ,(concat "Start the service group " namestr)
          (interactive)
          (message ,(concat "Starting " namestr "..."))
-         ; TODO Make service calls here
-         ))))
+         ,@(loop for call in services
+                 collect `(,(intern (concat (symbol-name call) "-start")))))
 
-(dz-defservice-group warehouse (onzo-data-thrift onzo-data-frontend))
+       (defun ,(intern (concat namestr "-stop")) ()
+         ,(concat "Stop the service group " namestr)
+         (interactive)
+         (message ,(concat "Stopping " namestr))
+         ,@(loop for call in services
+                 collect `(,(intern (concat (symbol-name call) "-stop")))))
 
+       (defun ,(intern (concat namestr "-restart")) ()
+         ,(concat "Restart the service group " namestr)
+         (interactive)
+         (message ,(concat "Restarting " namestr))
+         ,@(loop for call in services
+                 collect `(,(intern (concat (symbol-name call) "-restart"))))))))
 
 ;;
 ;; Reloads
@@ -217,13 +226,14 @@ where name and command are strings, args a list, and dont-pop optional.
 have been regisered as reloading."
   (buffer-file-name))
 
-(defun dz-register-reload (service path)
+(defmacro dz-register-reload (service path)
   "Register `service' as a project you would like to reload when saving any
 files under `path'"
-  (aput 'dz-reload-services path service))
+  `(aput 'dz-reload-services ,path ',service))
 
-; (dz-register-reload 'data-thrift "~/thrifty")
-; (dz-register-reload 'data-thrift2 "~/src2/onzo/hah")#
+(dz-register-reload data-thrift "~/thrifty")
+
+; (dz-register-reload data-thrift2 "~/src2/onzo/hah")#
 
 (add-hook 'after-save-hook (lambda () (dz-reload)))
 
