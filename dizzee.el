@@ -38,6 +38,7 @@
 ;; Module level requires
 ;;
 (require 'cl)
+(require 'assoc)
 
 ;;
 ;; Utilities
@@ -135,7 +136,7 @@
 ;; Functions related to defining and manipulating services
 ;;
 
-(defmacro dz-defservice (name command args &optional port)
+(defmacro* dz-defservice (name command &key port args cd)
   "Expand to be an interactive dz service e.g. sse/backend/whitelabel
 Args are expected to be: `name` `command` `args` `dont-pop`
 where name and command are strings, args a list, and dont-pop optional.
@@ -147,7 +148,7 @@ name-stop
 name-restart
 name-running-p
 
-\(dz-defservice backend \"~/scripts/backend_server\") nil 8080)
+\(dz-defservice backend \"~/scripts/backend_server\") :port 8080)
 "
   (let* ((namestr (symbol-name name))
          (start (concat namestr "-start"))
@@ -159,24 +160,29 @@ name-running-p
          "Start the service"
          (interactive)
          (message "starting...")
-         (dz-comint-pop ,namestr ,command ,args))
-
+         ,(if cd cd)
+         (dz-comint-pop ,namestr ,command ,args)
+         )
        (defun ,(intern stop) ()
          "Stop the service"
          (interactive)
          (message "stopping")
          (dz-subp-stop ,namestr))
-
        (defun ,(intern (concat namestr "-restart")) ()
          "Restart the service..."
          (interactive)
          (message "Restarting...")
          (,(intern stop))
          (run-with-timer 1 nil ',(intern start) ))
-
        (defun ,(intern (concat namestr "-running-p")) ()
          "Determine whether we're running or not"
          (dz-xp (get-buffer-process ,(concat "*" namestr "*")))))))
+
+
+(dz-defservice onzo-client "~/src/onzo/client/src/client/run_client_sse.sh"
+               :args (list "foo") :port 3003
+               :cd "~/src/onzo/client/src/client")
+
 
 (defmacro dz-defservice-group (name services)
   "Create a group of services that function as a project together.
