@@ -87,6 +87,14 @@
   "Return values from `alist' whose KEY matches `regexp'"
   (mapcan #'(lambda (k) (aget alist k)) (dz-regexp-filter (dz-akeys alist) regexp)))
 
+;;;###autoload
+(defmacro dz-dir-excursion (dir body)
+  "Perform BODY having moved to DIR before returning to the current directory"
+  (let ((curdir default-directory))
+    `(progn (cd ,dir)
+            ,body
+            (cd ,curdir))))
+
 ;;
 ;; Emacs utilities
 ;;
@@ -160,9 +168,11 @@ name-running-p
          "Start the service"
          (interactive)
          (message "starting...")
-         ,(if cd cd)
-         (dz-comint-pop ,namestr ,command ,args)
-         )
+         ,(let ((run `(dz-comint-pop ,namestr ,command ,args)))
+            (if cd
+                `(dz-dir-excursion ,cd
+                                   ,run)
+              run))
        (defun ,(intern stop) ()
          "Stop the service"
          (interactive)
@@ -176,12 +186,7 @@ name-running-p
          (run-with-timer 1 nil ',(intern start) ))
        (defun ,(intern (concat namestr "-running-p")) ()
          "Determine whether we're running or not"
-         (dz-xp (get-buffer-process ,(concat "*" namestr "*")))))))
-
-
-(dz-defservice onzo-client "~/src/onzo/client/src/client/run_client_sse.sh"
-               :args (list "foo") :port 3003
-               :cd "~/src/onzo/client/src/client")
+         (dz-xp (get-buffer-process ,(concat "*" namestr "*"))))))))
 
 
 (defmacro dz-defservice-group (name services)
@@ -220,26 +225,31 @@ Example:
 ;;
 ;; Commentary:
 ;;
-;; Sometimes wr want to restart services when we save files in
+;; Sometimes we want to restart services when we save files in
 ;; a particular path. Let's do that.
 ;;
 
-(defvar dz-reload-services '()
+(defvar dz-reload-services (make-hash-table :test 'equal)
   "Alist of services that we want to reload")
 
 (defun dz-reload ()
   "Executed as a file-save-hook, this function restarts any services that
 have been regisered as reloading."
-  (buffer-file-name))
+  (let ((saving (expand-file-name (buffer-file-name))))
+    (maphash (lambda (service path-re)
+               (if (string-match-p path-re saving)
+                   (progn
+                     (message (concat "Restarting " service))
+                     (funcall (intern (concat service "-restart"))))))
+             dz-reload-services)))
 
 (defmacro dz-register-reload (service path)
-  "Register `service' as a project you would like to reload when saving any
-files under `path'"
-  `(aput 'dz-reload-services ,path ',service))
+  "Register SERVICE as a project you would like to reload when saving any
+files under PATH"
+  `(puthash ,(symbol-name service) ,path dz-reload-services ))
 
-(dz-register-reload data-thrift "~/thrifty")
 
-; (dz-register-reload data-thrift2 "~/src2/onzo/hah")#
+(dz-register-reload data-thrift2 "~/src2/onzo/hah")
 
 (add-hook 'after-save-hook (lambda () (dz-reload)))
 
