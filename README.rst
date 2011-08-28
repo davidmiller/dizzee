@@ -5,10 +5,13 @@ Dizzee - Subprocess management for Emacs
 Dizzee is a pleasant way to manage your project's subprocesses in Emacs.
 
 You have a project.
+
 In order to get an instance running and start working, you have to manually launch say... 4 processes in 4 different shells.
+
 This is *Not Fun*.
 
 Thankfully it is also a definable, repeatable process - which means that we can *Use Programming*.
+
 At worst, this is *More Fun* than doing it yourself every time.
 
 Services
