@@ -14,6 +14,7 @@
 
 (require 'dizzee)
 
+
 (dz-defservice adder "/home/david/emacs/site-packages/dizzee/test/services/adder.py")
 
 (dz-register-reload adder "dizzee")
@@ -21,3 +22,7 @@
 (adder-start)
 
 (adder-stop)
+
+(adder-start)
+
+(adder-deregister-reload)
