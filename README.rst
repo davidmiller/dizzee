@@ -52,6 +52,8 @@ Positional:
 * Service   - (symbol) The name of the service
 * Command   - (string) The executable to run
 
+Keyword:
+
 * :cd       - (string) The directory in which you would like the service to run
 * :args     - (list of strings) The arguments you would like to be passed to the executable
 
@@ -89,7 +91,7 @@ Installation
 
 Use el-get with the github repo as a git source.
 
-Or, if you insist, *grumbles...* download dizzee.el and::
+Or, if you insist, (*grumbles...*) download dizzee.el and::
 
     (require 'dizzee)
 
