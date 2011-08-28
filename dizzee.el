@@ -144,7 +144,13 @@
 ;; Functions related to defining and manipulating services
 ;;
 
-(defmacro* dz-defservice (name command &key port args cd)
+(defmacro with-service-name (service body)
+  "Locally bind the string representation of SERVICE to `service-name' then
+execute BODY"
+  `(let ((service-name (symbol-name service)))
+     ,body))
+
+(defmacro* dz-defservice (service command &key port args cd)
   "Expand to be an interactive dz service e.g. sse/backend/whitelabel
 Args are expected to be: `name` `command` `args` `dont-pop`
 where name and command are strings, args a list, and dont-pop optional.
@@ -158,65 +164,74 @@ name-running-p
 
 \(dz-defservice backend \"~/scripts/backend_server\") :port 8080)
 "
-  (let* ((namestr (symbol-name name))
-         (start (concat namestr "-start"))
-         (stop (concat namestr "-stop")))
-    (if port
-        (puthash namestr port dz-service-hash))
-    `(progn
-       (defun ,(intern start) ()
-         "Start the service"
-         (interactive)
-         (message "starting...")
-         ,(let ((run `(dz-comint-pop ,namestr ,command ,args)))
-            (if cd
-                `(dz-dir-excursion ,cd
-                                   ,run)
-              run))
-       (defun ,(intern stop) ()
-         "Stop the service"
-         (interactive)
-         (message "stopping")
-         (dz-subp-stop ,namestr))
-       (defun ,(intern (concat namestr "-restart")) ()
-         "Restart the service..."
-         (interactive)
-         (message "Restarting...")
-         (,(intern stop))
-         (run-with-timer 1 nil ',(intern start) ))
-       (defun ,(intern (concat namestr "-running-p")) ()
-         "Determine whether we're running or not"
-         (dz-xp (get-buffer-process ,(concat "*" namestr "*"))))))))
+  (with-service-name
+   service
+   (let* ((start (concat service-name "-start"))
+          (stop (concat service-name "-stop")))
+     (if port
+         (puthash service-name port dz-service-hash))
+     `(progn
+        (defun ,(intern start) ()
+          "Start the service"
+          (interactive)
+          (message "starting...")
+          ,(let ((run `(dz-comint-pop ,service-name ,command (list ,@args))))
+             (if cd
+                 `(dz-dir-excursion ,cd
+                                    ,run)
+               run)))
+        (defun ,(intern stop) ()
+          "Stop the service"
+          (interactive)
+          (message "stopping")
+          (dz-subp-stop ,service-name))
+        (defun ,(intern (concat service-name "-restart")) ()
+          "Restart the service..."
+          (interactive)
+          (message "Restarting...")
+          (,(intern stop))
+          (run-with-timer 1 nil ',(intern start) ))
+        (defun ,(intern (concat service-name "-running-p")) ()
+          "Determine whether we're running or not"
+          (dz-xp (get-buffer-process ,(concat "*" service-name "*"))))))))
 
+(defmacro dz-defservice-group (service services)
+  "Create a named group of services called SERVICE that serve as a conceptual grouping
+of a single project.
 
-(defmacro dz-defservice-group (name services)
-  "Create a group of services that function as a project together.
-This allows us to start groups of complimentary services together.
+In so doing, this allows us to start groups of complimentary services together.
 
 Example:
 
 \(dz-defservice-group warehouse (ornithology-thrift ornithology-frontend))
+
+Creates the service warehouse, with which we can start both the
+ornithology-thrift and ornithology-frontend services with the single command:
+
+M-x warehouse-start
+
+Also provided are the interfaces SERVICE-stop and SERVICE-restart
 "
-  (let ((namestr (symbol-name name)))
+  (with-service-name service
     `(progn
-       (defun ,(intern (concat namestr "-start")) ()
-         ,(concat "Start the service group " namestr)
+       (defun ,(intern (concat service-name "-start")) ()
+         ,(concat "Start the service group " service-name)
          (interactive)
-         (message ,(concat "Starting " namestr "..."))
+         (message ,(concat "Starting " service-name "..."))
          ,@(loop for call in services
                  collect `(,(intern (concat (symbol-name call) "-start")))))
 
-       (defun ,(intern (concat namestr "-stop")) ()
-         ,(concat "Stop the service group " namestr)
+       (defun ,(intern (concat service-name "-stop")) ()
+         ,(concat "Stop the service group " service-name)
          (interactive)
-         (message ,(concat "Stopping " namestr))
+         (message ,(concat "Stopping " service-name))
          ,@(loop for call in services
                  collect `(,(intern (concat (symbol-name call) "-stop")))))
 
-       (defun ,(intern (concat namestr "-restart")) ()
-         ,(concat "Restart the service group " namestr)
+       (defun ,(intern (concat service-name "-restart")) ()
+         ,(concat "Restart the service group " service-name)
          (interactive)
-         (message ,(concat "Restarting " namestr))
+         (message ,(concat "Restarting " service-name))
          ,@(loop for call in services
                  collect `(,(intern (concat (symbol-name call) "-restart"))))))))
 
@@ -246,10 +261,15 @@ have been regisered as reloading."
 (defmacro dz-register-reload (service path)
   "Register SERVICE as a project you would like to reload when saving any
 files under PATH"
-  `(puthash ,(symbol-name service) ,path dz-reload-services ))
+  (with-service-name service
+    `(progn
+       (puthash ,(symbol-name service) ,path dz-reload-services )
+       (defun ,(intern (concat service-name "-deregister-reload")) nil
+         ,(concat "Stop reloading " service-name)
+         (interactive)
+         (remhash ,service-name dz-reload-services)))))
 
 
-(dz-register-reload data-thrift2 "~/src2/onzo/hah")
 
 (add-hook 'after-save-hook (lambda () (dz-reload)))
 
