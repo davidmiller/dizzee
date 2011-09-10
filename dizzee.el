@@ -5,6 +5,7 @@
 ;; Author: David Miller <david@deadpansincerity.com>
 ;; Version: 0.1
 ;; Created: 2011-06-23
+;; URL: https://github.com/davidmiller/dizzee
 ;; Keywords: Emacs processes
 
 ;; This file is NOT part of GNU Emacs.

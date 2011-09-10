@@ -2,7 +2,7 @@ VERSION=$(shell grep -P -o '(?<=Version: )[0-9.]+' dizzee.el)
 RELEASEDIR=dizzee-$(VERSION)
 BUILDDIR=build/$(RELEASEDIR)
 
-release: clean package tag
+release: clean package
 
 all:
 	@echo "What do you want from me?"
