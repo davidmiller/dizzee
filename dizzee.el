@@ -274,4 +274,4 @@ files under PATH"
 (add-hook 'after-save-hook (lambda () (dz-reload)))
 
 (provide 'dizzee)
-;; Code ends
+;;; dizzee.el ends
