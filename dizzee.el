@@ -127,7 +127,7 @@
   "Make a comint buffer for process `name', executing `command' with
 `args' and then pop to that buffer."
   (ansi-color-for-comint-mode-on)
-  (apply 'make-comint name command args)
+  (apply 'make-comint name command nil args)
   (if (not dont-pop)
       (dz-pop (concat "*" name "*"))))
 
