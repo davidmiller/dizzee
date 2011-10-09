@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011 David Miller <david@deadpansincerity.com>
 
 ;; Author: David Miller <david@deadpansincerity.com>
-;; Version: 0.1
+;; Version: 0.1.1
 ;; Created: 2011-06-23
 ;; URL: https://github.com/davidmiller/dizzee
 ;; Keywords: Emacs processes
