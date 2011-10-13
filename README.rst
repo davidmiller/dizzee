@@ -67,9 +67,7 @@ By Way Of Example
 
 Let's say you are plausibly working on a "Server" that will talk to a "Client". Having defined the `Sevices` my-server and my-client you can then define a `Service Group`::
 
-   (dz-defservice-group my-project
-                        my-server
-                        my-client)
+   (dz-defservice-group my-project (my-server my-client))
 
 
 This will provide the M-x functions
