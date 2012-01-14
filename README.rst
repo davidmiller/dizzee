@@ -33,7 +33,7 @@ With Dizzee you could define a `service` called *my-static* to turn this process
 To define this as a Dizzee service you would add the following to your .emacs::
 
    (dz-defservice my-static "python"
-                            :args '("-m" "SimpleHTTPServer" "7878")
+                            :args ("-m" "SimpleHTTPServer" "7878")
                             :cd "/home/you/your-awesome-project/static")
 
 
