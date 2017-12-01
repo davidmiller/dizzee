@@ -39,7 +39,6 @@
 ;; Module level requires
 ;;
 (require 'cl)
-(require 'assoc)
 
 ;;
 ;; Utilities
