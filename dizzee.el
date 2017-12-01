@@ -87,14 +87,6 @@
   "Return values from `alist' whose KEY matches `regexp'"
   (mapcan #'(lambda (k) (aget alist k)) (dz-regexp-filter (dz-akeys alist) regexp)))
 
-;;;###autoload
-(defmacro dz-dir-excursion (dir body)
-  "Perform BODY having moved to DIR before returning to the current directory"
-  (let ((curdir default-directory))
-    `(progn (cd ,dir)
-            ,body
-            (cd ,curdir))))
-
 ;;
 ;; Emacs utilities
 ;;
@@ -177,8 +169,7 @@ name-running-p
           (message "starting...")
           ,(let ((run `(dz-comint-pop ,service-name ,command (list ,@args))))
              (if cd
-                 `(dz-dir-excursion ,cd
-                                    ,run)
+                 `(let ((default-directory ,cd)) ,run)
                run)))
         (defun ,(intern stop) ()
           "Stop the service"
