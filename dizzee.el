@@ -38,7 +38,7 @@
 ;;
 ;; Module level requires
 ;;
-(require 'cl)
+(require 'cl-lib)
 
 ;;
 ;; Utilities
@@ -218,21 +218,21 @@ Also provided are the interfaces SERVICE-stop and SERVICE-restart
          ,(concat "Start the service group " service-name)
          (interactive)
          (message ,(concat "Starting " service-name "..."))
-         ,@(loop for call in services
+         ,@(cl-loop for call in services
                  collect `(,(intern (concat (symbol-name call) "-start")))))
 
        (defun ,(intern (concat service-name "-stop")) ()
          ,(concat "Stop the service group " service-name)
          (interactive)
          (message ,(concat "Stopping " service-name))
-         ,@(loop for call in services
+         ,@(cl-loop for call in services
                  collect `(,(intern (concat (symbol-name call) "-stop")))))
 
        (defun ,(intern (concat service-name "-restart")) ()
          ,(concat "Restart the service group " service-name)
          (interactive)
          (message ,(concat "Restarting " service-name))
-         ,@(loop for call in services
+         ,@(cl-loop for call in services
                  collect `(,(intern (concat (symbol-name call) "-restart"))))))))
 
 ;;
