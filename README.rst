@@ -87,7 +87,9 @@ For now C-h f dz-register-reload
 Installation
 ============
 
-Use el-get with the github repo as a git source.
+Use el-get with the github repo as a git source or you can use straight.el::
+  (use-package dizzee
+  :straight (dizzee :host github :repo "davidmiller/dizzee"))
 
 Or, if you insist, (*grumbles...*) download dizzee.el and::
 
